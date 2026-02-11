@@ -12,6 +12,23 @@ type TaskService struct{}
 
 func NewTaskService() *TaskService { return &TaskService{} }
 
+type BusinessRule func(task Task, patch map[string]interface{}) error
+
+var updateBusinessRules = []BusinessRule{
+	preventCompletedTaskEdits,
+}
+
+func preventCompletedTaskEdits(task Task, patch map[string]interface{}) error {
+	if IsCompletedTask(task.Status) {
+		return NewBusinessRuleError("completed tasks cannot be edited")
+	}
+	return nil
+}
+
+func AddUpdateRule(rule BusinessRule) {
+	updateBusinessRules = append(updateBusinessRules, rule)
+}
+
 func (s *TaskService) ValidateCreate(t Task) error {
 	if t.Title == "" {
 		return NewValidationError("title is required")
@@ -91,9 +108,13 @@ func validateStringField(value interface{}, patch map[string]interface{}, fieldN
 }
 
 func (s *TaskService) ValidateUpdate(task Task, patch map[string]interface{}) error {
-	if IsCompletedTask(task.Status) {
-		return NewBusinessRuleError("completed tasks cannot be edited")
+	// Apply business rules
+	for _, rule := range updateBusinessRules {
+		if err := rule(task, patch); err != nil {
+			return err
+		}
 	}
+
 	if len(patch) == 0 {
 		return NewValidationError("no fields to update")
 	}
