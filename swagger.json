@@ -1,0 +1,309 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Tasks API",
+    "description": "REST API for managing tasks with MongoDB",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Development server"
+    }
+  ],
+  "paths": {
+    "/tasks": {
+      "post": {
+        "summary": "Create a new task",
+        "operationId": "createTask",
+        "tags": ["Tasks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskInput"
+              },
+              "example": {
+                "title": "Review code",
+                "description": "Code review PR #123",
+                "status": "pending",
+                "priority": "high"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing title or invalid status/priority)"
+          }
+        }
+      },
+      "get": {
+        "summary": "List all tasks",
+        "operationId": "listTasks",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by status (pending, in_progress, completed, cancelled)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "in_progress", "completed", "cancelled"]
+            }
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "description": "Filter by priority (low, medium, high)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["low", "medium", "high"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of all tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "summary": "Get a task by ID",
+        "operationId": "getTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Task ID (MongoDB ObjectID in hex format)",
+            "schema": {
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update a task",
+        "operationId": "updateTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Task ID",
+            "schema": {
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskUpdate"
+              },
+              "example": {
+                "title": "Review code - updated",
+                "status": "in_progress",
+                "priority": "medium"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid status or priority"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a task",
+        "operationId": "deleteTask",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Task ID",
+            "schema": {
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Task deleted successfully"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique MongoDB ObjectID (24-char hex)",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "title": {
+            "type": "string",
+            "description": "Task title (required)",
+            "example": "Review code"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description (optional)",
+            "example": "Code review PR #123"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "cancelled"],
+            "description": "Task status (required)",
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "Task priority (optional)",
+            "example": "high"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Task creation timestamp (ISO 8601)",
+            "example": "2026-02-11T14:04:50Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Task last update timestamp (null if not updated)",
+            "example": "2026-02-11T15:30:20Z"
+          }
+        },
+        "required": ["id", "title", "status", "completed", "created_at", "updated_at"]
+      },
+      "TaskInput": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title (required)",
+            "example": "Review code"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description (optional)",
+            "example": "Code review PR #123"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "cancelled"],
+            "description": "Task status (required)",
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "Task priority (optional)",
+            "example": "high"
+          }
+        },
+        "required": ["title", "status"]
+      },
+      "TaskUpdate": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title (optional, update only if provided)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Task description (optional)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "cancelled"],
+            "description": "Task status (optional, update only if provided)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "Task priority (optional)"
+          }
+        }
+      }
+    }
+  }
+}
