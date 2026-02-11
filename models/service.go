@@ -2,15 +2,65 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
 	"time"
 )
 
-type TaskService struct{}
+// Logger interface for dependency injection
+type Logger interface {
+	Info(msg string, args ...interface{})
+	Warn(msg string, args ...interface{})
+	Error(msg string, args ...interface{})
+	Fatal(msg string, args ...interface{})
+}
 
-func NewTaskService() *TaskService { return &TaskService{} }
+// DefaultLogger implements Logger using standard log package
+type DefaultLogger struct{}
+
+func (l *DefaultLogger) Info(msg string, args ...interface{}) {
+	log.Printf("[INFO] "+msg, args...)
+}
+
+func (l *DefaultLogger) Warn(msg string, args ...interface{}) {
+	log.Printf("[WARN] "+msg, args...)
+}
+
+func (l *DefaultLogger) Error(msg string, args ...interface{}) {
+	log.Printf("[ERROR] "+msg, args...)
+}
+
+func (l *DefaultLogger) Fatal(msg string, args ...interface{}) {
+	log.Fatalf("[FATAL] "+msg, args...)
+}
+
+// NewDefaultLogger creates a logger using standard log package
+func NewDefaultLogger() Logger {
+	return &DefaultLogger{}
+}
+
+type NoOpLogger struct{}
+
+func (l *NoOpLogger) Info(msg string, args ...interface{})  {}
+func (l *NoOpLogger) Warn(msg string, args ...interface{})  {}
+func (l *NoOpLogger) Error(msg string, args ...interface{}) {}
+func (l *NoOpLogger) Fatal(msg string, args ...interface{}) {
+	panic(fmt.Sprintf(msg, args...))
+}
+
+type TaskService struct {
+	logger Logger
+}
+
+func NewTaskService(logger Logger) *TaskService {
+	if logger == nil {
+		logger = NewDefaultLogger()
+	}
+	return &TaskService{logger: logger}
+}
 
 type BusinessRule func(task Task, patch map[string]interface{}) error
 

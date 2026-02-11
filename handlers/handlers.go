@@ -14,10 +14,18 @@ import (
 type API struct {
 	store   store.Store
 	service *models.TaskService
+	logger  models.Logger
 }
 
-func NewAPI(s store.Store) *API {
-	return &API{store: s, service: models.NewTaskService()}
+func NewAPI(s store.Store, logger models.Logger) *API {
+	if logger == nil {
+		logger = models.NewDefaultLogger()
+	}
+	return &API{
+		store:   s,
+		service: models.NewTaskService(logger),
+		logger:  logger,
+	}
 }
 
 func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {

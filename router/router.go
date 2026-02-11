@@ -2,17 +2,22 @@ package router
 
 import (
 	"context"
-	"log"
 	"os"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	"example.com/tasksapi/handlers"
+	"example.com/tasksapi/models"
 	"example.com/tasksapi/store"
 )
 
 func New() *mux.Router {
+	logger := models.NewDefaultLogger()
+	return NewWithLogger(logger)
+}
+
+func NewWithLogger(logger models.Logger) *mux.Router {
 	var s store.Store
 
 	mongoURI := os.Getenv("MONGO_URI")
@@ -36,15 +41,15 @@ func New() *mux.Router {
 	cancel()
 
 	if err != nil {
-		log.Printf("WARNING: failed to connect to MongoDB (%s): %v\n", mongoURI, err)
-		log.Println("falling back to in-memory store")
+		logger.Warn("failed to connect to MongoDB (%s): %v", mongoURI, err)
+		logger.Info("falling back to in-memory store")
 		s = store.New()
 	} else {
 		s = m
-		log.Printf("successfully connected to MongoDB: %s\n", mongoURI)
+		logger.Info("successfully connected to MongoDB: %s", mongoURI)
 	}
 
-	api := handlers.NewAPI(s)
+	api := handlers.NewAPI(s, logger)
 	r := mux.NewRouter()
 	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
 	r.HandleFunc("/tasks", api.ListTasks).Methods("GET")
