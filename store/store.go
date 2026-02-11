@@ -13,13 +13,20 @@ const queryTimeout = 10 * time.Second
 
 var ErrNotFound = errors.New("task not found")
 
-// Store interface define o contrato do armazenamento das Tasks
-type Store interface {
-	Create(t models.Task) models.Task
-	List() []models.Task
+type TaskReader interface {
 	Get(id string) (models.Task, error)
+	List() []models.Task
+}
+
+type TaskWriter interface {
+	Create(t models.Task) models.Task
 	Update(id string, patch map[string]interface{}) (models.Task, error)
 	Delete(id string) error
+}
+
+type Store interface {
+	TaskReader
+	TaskWriter
 }
 
 type InMemoryStore struct {
