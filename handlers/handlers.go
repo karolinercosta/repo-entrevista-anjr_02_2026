@@ -26,7 +26,7 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 	ct := r.Header.Get("Content-Type")
 	if strings.Contains(ct, "application/json") {
 		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-			http.Error(w, "invalid request", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid request")
 			return
 		}
 	} else {
@@ -43,7 +43,7 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 		if v := r.FormValue("due_date"); v != "" {
 			parsed, err := models.ParseDate(v)
 			if err != nil {
-				http.Error(w, "invalid date format, expected YYYY-MM-DD", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, "invalid date format, expected YYYY-MM-DD")
 				return
 			}
 			t.DueDate = &parsed
@@ -51,30 +51,27 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	}
 	if t.Title == "" {
-		http.Error(w, "title is required", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "title is required")
 		return
 	}
 	if t.Status == "" {
-		http.Error(w, "status is required", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "status is required")
 		return
 	}
 	if !models.IsValidStatus(t.Status) {
-		http.Error(w, "invalid status, allowed: pending, in_progress, completed, cancelled", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "invalid status, allowed: pending, in_progress, completed, cancelled")
 		return
 	}
 	if t.Priority != "" && !models.IsValidPriority(t.Priority) {
-		http.Error(w, "invalid priority, allowed: low, medium, high", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "invalid priority, allowed: low, medium, high")
 		return
 	}
-
-	// Só valida se houver due date
 	if t.DueDate != nil {
 		if !models.IsValidDate(*t.DueDate) {
-			http.Error(w, "date should be in the future", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "date should be in the future")
 			return
 		}
 	}
-
 	created := a.store.Create(t)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -110,7 +107,7 @@ func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	t, err := a.store.Get(id)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "not found")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -119,21 +116,20 @@ func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-
 	task, err := a.store.Get(id)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "not found")
 		return
 	}
 	if models.IsCompletedTask(task.Status) {
-		http.Error(w, "completed tasks cannot be edited", http.StatusBadRequest)
+		writeJSONError(w, http.StatusConflict, "completed tasks cannot be edited")
 		return
 	}
 	var patch map[string]interface{}
 	ct := r.Header.Get("Content-Type")
 	if strings.Contains(ct, "application/json") {
 		if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
-			http.Error(w, "invalid request", http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "invalid request")
 			return
 		}
 	} else {
@@ -159,7 +155,7 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		if v := r.FormValue("due_date"); v != "" {
 			parsed, err := models.ParseDate(v)
 			if err != nil {
-				http.Error(w, "invalid date format, expected YYYY-MM-DD", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, "invalid date format, expected YYYY-MM-DD")
 				return
 			}
 			patch["due_date"] = parsed
@@ -167,24 +163,21 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	}
 	log.Println("UpdateTask: id=%s incoming patch=%#v", id, patch)
-
-	// validate and normalize provided fields
 	if len(patch) == 0 {
-		http.Error(w, "no fields to update", http.StatusBadRequest)
+		writeJSONError(w, http.StatusBadRequest, "no fields to update")
 		return
 	}
-
 	allowed := map[string]struct{}{"title": {}, "description": {}, "status": {}, "priority": {}, "due_date": {}}
 	for k, v := range patch {
 		if _, ok := allowed[k]; !ok {
-			http.Error(w, "unknown field: "+k, http.StatusBadRequest)
+			writeJSONError(w, http.StatusBadRequest, "unknown field: "+k)
 			return
 		}
 		switch k {
 		case "status":
 			s, ok := v.(string)
 			if !ok || !models.IsValidStatus(s) {
-				http.Error(w, "invalid status, allowed: pending, in_progress, completed, cancelled", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, "invalid status, allowed: pending, in_progress, completed, cancelled")
 				return
 			}
 			patch[k] = s
@@ -192,7 +185,7 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		case "priority":
 			s, ok := v.(string)
 			if !ok || !models.IsValidPriority(s) {
-				http.Error(w, "invalid priority, allowed: low, medium, high", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, "invalid priority, allowed: low, medium, high")
 				return
 			}
 			patch[k] = s
@@ -201,34 +194,34 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 			case string:
 				parsed, err := models.ParseDate(vv)
 				if err != nil {
-					http.Error(w, "invalid date format, expected YYYY-MM-DD", http.StatusBadRequest)
+					writeJSONError(w, http.StatusBadRequest, "invalid date format, expected YYYY-MM-DD")
 					return
 				}
 				if !models.IsValidDate(parsed) {
-					http.Error(w, "date should be in the future", http.StatusBadRequest)
+					writeJSONError(w, http.StatusBadRequest, "date should be in the future")
 					return
 				}
 				patch[k] = parsed
 			case time.Time:
 				if !models.IsValidDate(vv) {
-					http.Error(w, "date should be in the future", http.StatusBadRequest)
+					writeJSONError(w, http.StatusBadRequest, "date should be in the future")
 					return
 				}
 				patch[k] = vv
 			default:
-				http.Error(w, "due_date must be a YYYY-MM-DD string or date", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, "due_date must be a YYYY-MM-DD string or date")
 				return
 			}
 		case "title", "description":
 			if _, ok := v.(string); !ok {
-				http.Error(w, k+" must be a string", http.StatusBadRequest)
+				writeJSONError(w, http.StatusBadRequest, k+" must be a string")
 				return
 			}
 		}
 	}
 	t, err := a.store.Update(id, patch)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "not found")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -238,8 +231,17 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 func (a *API) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 	if err := a.store.Delete(id); err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeJSONError(w, http.StatusNotFound, "not found")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func writeJSONError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": msg,
+		"code":  status,
+	})
 }
