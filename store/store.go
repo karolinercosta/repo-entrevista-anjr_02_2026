@@ -94,11 +94,6 @@ func (s *InMemoryStore) Update(id string, patch map[string]interface{}) (models.
 			t.Priority = s2
 		}
 	}
-	if v, ok := patch["completed"]; ok {
-		if b, ok := v.(bool); ok {
-			t.Completed = b
-		}
-	}
 	if v, ok := patch["due_date"]; ok {
 		switch vv := v.(type) {
 		case time.Time:

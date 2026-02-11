@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -49,11 +48,7 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 			}
 			t.DueDate = &parsed
 		}
-		if v := r.FormValue("completed"); v != "" {
-			if b, err := strconv.ParseBool(v); err == nil {
-				t.Completed = b
-			}
-		}
+
 	}
 	if t.Title == "" {
 		http.Error(w, "title is required", http.StatusBadRequest)
@@ -159,11 +154,7 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 			}
 			patch["due_date"] = parsed
 		}
-		if v := r.FormValue("completed"); v != "" {
-			if b, err := strconv.ParseBool(v); err == nil {
-				patch["completed"] = b
-			}
-		}
+
 	}
 	log.Println("UpdateTask: id=%s incoming patch=%#v", id, patch)
 
@@ -173,7 +164,7 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	allowed := map[string]struct{}{"title": {}, "description": {}, "status": {}, "priority": {}, "completed": {}, "due_date": {}}
+	allowed := map[string]struct{}{"title": {}, "description": {}, "status": {}, "priority": {}, "due_date": {}}
 	for k, v := range patch {
 		if _, ok := allowed[k]; !ok {
 			http.Error(w, "unknown field: "+k, http.StatusBadRequest)
@@ -195,20 +186,6 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			patch[k] = s
-		case "completed":
-			if b, ok := v.(bool); ok {
-				patch[k] = b
-			} else if s, ok := v.(string); ok {
-				if parsed, err := strconv.ParseBool(s); err == nil {
-					patch[k] = parsed
-				} else {
-					http.Error(w, "invalid completed value", http.StatusBadRequest)
-					return
-				}
-			} else {
-				http.Error(w, "invalid completed value", http.StatusBadRequest)
-				return
-			}
 		case "due_date":
 			switch vv := v.(type) {
 			case string:

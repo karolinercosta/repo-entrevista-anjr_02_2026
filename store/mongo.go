@@ -64,7 +64,6 @@ func (m *MongoStore) Create(t models.Task) models.Task {
 		"description": t.Description,
 		"status":      t.Status,
 		"priority":    t.Priority,
-		"completed":   t.Completed,
 		"created_at":  t.CreatedAt,
 		"updated_at":  t.UpdatedAt,
 	}
@@ -134,11 +133,6 @@ func (m *MongoStore) Update(id string, patch map[string]interface{}) (models.Tas
 	if v, ok := patch["priority"]; ok {
 		if s, ok := v.(string); ok {
 			update["priority"] = s
-		}
-	}
-	if v, ok := patch["completed"]; ok {
-		if b, ok := v.(bool); ok {
-			update["completed"] = b
 		}
 	}
 	if v, ok := patch["due_date"]; ok {
