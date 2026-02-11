@@ -119,6 +119,16 @@ func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
+
+	task, err := a.store.Get(id)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	if models.IsCompletedTask(task.Status) {
+		http.Error(w, "completed tasks cannot be edited", http.StatusBadRequest)
+		return
+	}
 	var patch map[string]interface{}
 	ct := r.Header.Get("Content-Type")
 	if strings.Contains(ct, "application/json") {

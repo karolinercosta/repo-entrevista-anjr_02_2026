@@ -6,6 +6,8 @@ import (
 	"github.com/araddon/dateparse"
 )
 
+const StatusCompleted = "completed"
+
 var (
 	ValidStatuses   = map[string]struct{}{"pending": {}, "in_progress": {}, "completed": {}, "cancelled": {}}
 	ValidPriorities = map[string]struct{}{"low": {}, "medium": {}, "high": {}}
@@ -35,4 +37,8 @@ func IsValidDate(due_date time.Time) bool {
 // Usa o ParseDate araddon/dateparse para vários formatos automaticamente(YYYY-MM-DD, RFC3339, etc.)
 func ParseDate(s string) (time.Time, error) {
 	return dateparse.ParseAny(s)
+}
+
+func IsCompletedTask(status string) bool {
+	return status == StatusCompleted
 }
