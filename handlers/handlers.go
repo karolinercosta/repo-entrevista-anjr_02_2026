@@ -89,8 +89,26 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) ListTasks(w http.ResponseWriter, r *http.Request) {
 	tasks := a.store.List()
+
+	// Apply query parameter filters
+	status := r.URL.Query().Get("status")
+	priority := r.URL.Query().Get("priority")
+
+	filtered := make([]models.Task, 0)
+	for _, task := range tasks {
+		// Filtros
+		if status != "" && task.Status != status {
+			continue
+		}
+		if priority != "" && task.Priority != priority {
+			continue
+		}
+
+		filtered = append(filtered, task)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(tasks)
+	_ = json.NewEncoder(w).Encode(filtered)
 }
 
 func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +123,6 @@ func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
-	log.Println("aio")
 	id := mux.Vars(r)["id"]
 	var patch map[string]interface{}
 	ct := r.Header.Get("Content-Type")
