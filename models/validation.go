@@ -7,26 +7,18 @@ import (
 )
 
 var (
-	ValidStatuses   = []string{"pending", "in_progress", "completed", "cancelled"}
-	ValidPriorities = []string{"low", "medium", "high"}
+	ValidStatuses   = map[string]struct{}{"pending": {}, "in_progress": {}, "completed": {}, "cancelled": {}}
+	ValidPriorities = map[string]struct{}{"low": {}, "medium": {}, "high": {}}
 )
 
 func IsValidStatus(status string) bool {
-	for _, s := range ValidStatuses {
-		if s == status {
-			return true
-		}
-	}
-	return false
+	_, ok := ValidStatuses[status]
+	return ok
 }
 
 func IsValidPriority(priority string) bool {
-	for _, p := range ValidPriorities {
-		if p == priority {
-			return true
-		}
-	}
-	return false
+	_, ok := ValidPriorities[priority]
+	return ok
 }
 
 func IsValidDate(due_date time.Time) bool {
