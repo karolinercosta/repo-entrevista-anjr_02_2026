@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-	"time"
 )
 
 // Logger interface for dependency injection
@@ -131,7 +130,7 @@ func ValidatePriorityField(value interface{}, patch map[string]interface{}, fiel
 func ValidateDueDateField(value interface{}, patch map[string]interface{}, fieldName string) error {
 	switch vv := value.(type) {
 	case string:
-		parsed, err := ParseDate(vv)
+		parsed, err := ParseDateOnly(vv)
 		if err != nil {
 			return NewValidationError("invalid date format, expected YYYY-MM-DD")
 		}
@@ -139,7 +138,7 @@ func ValidateDueDateField(value interface{}, patch map[string]interface{}, field
 			return NewValidationError("date should be in the future")
 		}
 		patch[fieldName] = parsed
-	case time.Time:
+	case Date:
 		if !IsValidDate(vv) {
 			return NewValidationError("date should be in the future")
 		}

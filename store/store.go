@@ -104,13 +104,15 @@ func (s *InMemoryStore) Update(id string, patch map[string]interface{}) (models.
 	if v, ok := patch["due_date"]; ok {
 		switch vv := v.(type) {
 		case time.Time:
-			t.DueDate = &vv
+			date := models.NewDate(vv.Year(), vv.Month(), vv.Day())
+			t.DueDate = &date
 		case *time.Time:
 			if vv != nil {
-				t.DueDate = vv
+				date := models.NewDate(vv.Year(), vv.Month(), vv.Day())
+				t.DueDate = &date
 			}
 		case string:
-			if parsed, err := models.ParseDate(vv); err == nil {
+			if parsed, err := models.ParseDateOnly(vv); err == nil {
 				t.DueDate = &parsed
 			}
 		}

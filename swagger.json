@@ -237,6 +237,13 @@
             "description": "Task priority (optional)",
             "example": "high"
           },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "Task due date (optional, YYYY-MM-DD format)",
+            "example": "2026-02-15"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -277,6 +284,12 @@
             "enum": ["low", "medium", "high"],
             "description": "Task priority (optional)",
             "example": "high"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Task due date (optional, YYYY-MM-DD format)",
+            "example": "2026-02-15"
           }
         },
         "required": ["title", "status"]
@@ -301,6 +314,12 @@
             "type": "string",
             "enum": ["low", "medium", "high"],
             "description": "Task priority (optional)"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Task due date (optional, YYYY-MM-DD format)",
+            "example": "2026-02-15"
           }
         }
       }

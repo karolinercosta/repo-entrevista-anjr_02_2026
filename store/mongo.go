@@ -137,14 +137,14 @@ func (m *MongoStore) Update(id string, patch map[string]interface{}) (models.Tas
 	}
 	if v, ok := patch["due_date"]; ok {
 		switch vv := v.(type) {
-		case time.Time:
+		case models.Date:
 			update["due_date"] = vv
-		case *time.Time:
+		case *models.Date:
 			if vv != nil {
 				update["due_date"] = *vv
 			}
 		case string:
-			if parsed, err := models.ParseDate(vv); err == nil {
+			if parsed, err := models.ParseDateOnly(vv); err == nil {
 				update["due_date"] = parsed
 			}
 		}

@@ -47,7 +47,7 @@ func (a *API) CreateTask(w http.ResponseWriter, r *http.Request) {
 		t.Status = r.FormValue("status")
 		t.Priority = r.FormValue("priority")
 		if v := r.FormValue("due_date"); v != "" {
-			parsed, err := models.ParseDate(v)
+			parsed, err := models.ParseDateOnly(v)
 			if models.HandleError(w, err, http.StatusBadRequest) {
 				return
 			}
@@ -132,7 +132,7 @@ func (a *API) UpdateTask(w http.ResponseWriter, r *http.Request) {
 			patch["priority"] = v
 		}
 		if v := r.FormValue("due_date"); v != "" {
-			parsed, err := models.ParseDate(v)
+			parsed, err := models.ParseDateOnly(v)
 			if models.HandleError(w, err, http.StatusBadRequest) {
 				return
 			}
