@@ -34,3 +34,7 @@ func IsValidDate(due_date Date) bool {
 func IsCompletedTask(status string) bool {
 	return status == StatusCompleted
 }
+
+func IsValidTitle(title string) bool {
+	return len(title) >= 3 && len(title) <= 100
+}

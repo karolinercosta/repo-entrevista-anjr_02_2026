@@ -79,25 +79,38 @@ func AddUpdateRule(rule BusinessRule) {
 }
 
 func (s *TaskService) ValidateCreate(t Task) error {
+	// Required fields
 	if t.Title == "" {
 		return NewValidationError("title is required")
 	}
 	if t.Status == "" {
 		return NewValidationError("status is required")
 	}
-	if !IsValidStatus(t.Status) {
-		return NewValidationError("invalid status")
+
+	// fieldValidators na validação
+	patch := make(map[string]interface{})
+
+	if err := fieldValidators["title"](t.Title, patch, "title"); err != nil {
+		return err
 	}
-	if t.Priority != "" && !IsValidPriority(t.Priority) {
-		return NewValidationError("invalid priority")
+	if err := fieldValidators["status"](t.Status, patch, "status"); err != nil {
+		return err
 	}
-	if t.DueDate != nil && !IsValidDate(*t.DueDate) {
-		return NewValidationError("date should be in the future")
+	if t.Priority != "" {
+		if err := fieldValidators["priority"](t.Priority, patch, "priority"); err != nil {
+			return err
+		}
 	}
+	if t.DueDate != nil {
+		if err := fieldValidators["due_date"](*t.DueDate, patch, "due_date"); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-// FieldValidator validates a field value and may transform it
+// FieldValidator valida o valor do campo e transforma
 type FieldValidator func(value interface{}, patch map[string]interface{}, fieldName string) error
 
 // Field validators for each updatable field
@@ -105,7 +118,7 @@ var fieldValidators = map[string]FieldValidator{
 	"status":      ValidateStatusField,
 	"priority":    ValidatePriorityField,
 	"due_date":    ValidateDueDateField,
-	"title":       ValidateStringField,
+	"title":       ValidateTitleField,
 	"description": ValidateStringField,
 }
 
@@ -153,6 +166,17 @@ func ValidateStringField(value interface{}, patch map[string]interface{}, fieldN
 	if _, ok := value.(string); !ok {
 		return NewValidationError(fieldName + " must be a string")
 	}
+	return nil
+}
+func ValidateTitleField(value interface{}, patch map[string]interface{}, fieldName string) error {
+	s, ok := value.(string)
+	if !ok {
+		return NewValidationError(fieldName + " must be a string")
+	}
+	if !IsValidTitle(s) {
+		return NewValidationError("invalid title length, it should be between 3 and 100")
+	}
+	patch[fieldName] = s
 	return nil
 }
 
