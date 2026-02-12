@@ -7,8 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"example.com/tasksapi/handlers"
 	"example.com/tasksapi/models"
 	"example.com/tasksapi/router"
+	"example.com/tasksapi/store"
+	"github.com/gorilla/mux"
 )
 
 func TestIntegrationUpdateCompletedTask(t *testing.T) {
@@ -133,5 +136,136 @@ func TestIntegrationFullCRUD(t *testing.T) {
 
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected 404 after delete, got %d", w.Code)
+	}
+}
+
+func TestIntegrationTaskWithDueDate(t *testing.T) {
+	// Create isolated store for this test
+	s := store.New()
+	logger := &models.NoOpLogger{}
+	api := handlers.NewAPI(s, logger)
+	
+	r := mux.NewRouter()
+	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
+	r.HandleFunc("/tasks/{id}", api.GetTask).Methods("GET")
+	r.HandleFunc("/tasks/{id}", api.UpdateTask).Methods("PUT")
+
+	// Create task with due_date
+	createJSON := `{"title":"Task with Due Date","status":"pending","due_date":"2026-12-31"}`
+	req := httptest.NewRequest("POST", "/tasks", bytes.NewBufferString(createJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create failed: %d", w.Code)
+	}
+
+	var task models.Task
+	json.NewDecoder(w.Body).Decode(&task)
+
+	// Verify due_date is set correctly
+	if task.DueDate == nil {
+		t.Fatal("expected due_date to be set")
+	}
+	if task.DueDate.String() != "2026-12-31" {
+		t.Errorf("expected due_date '2026-12-31', got '%s'", task.DueDate.String())
+	}
+
+	// Get task and verify date is returned
+	req = httptest.NewRequest("GET", "/tasks/"+task.ID, nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var retrieved models.Task
+	json.NewDecoder(w.Body).Decode(&retrieved)
+	if retrieved.DueDate == nil {
+		t.Fatal("expected due_date in retrieved task")
+	}
+	if retrieved.DueDate.String() != "2026-12-31" {
+		t.Errorf("expected retrieved due_date '2026-12-31', got '%s'", retrieved.DueDate.String())
+	}
+
+	// Update due_date
+	updateJSON := `{"due_date":"2027-01-15"}`
+	req = httptest.NewRequest("PUT", "/tasks/"+task.ID, bytes.NewBufferString(updateJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("update failed: %d", w.Code)
+	}
+
+	var updated models.Task
+	json.NewDecoder(w.Body).Decode(&updated)
+	if updated.DueDate == nil {
+		t.Fatal("expected due_date in updated task")
+	}
+	if updated.DueDate.String() != "2027-01-15" {
+		t.Errorf("expected updated due_date '2027-01-15', got '%s'", updated.DueDate.String())
+	}
+}
+
+func TestIntegrationFilterByDueDateAndPriority(t *testing.T) {
+	// Create isolated store for this test
+	s := store.New()
+	logger := &models.NoOpLogger{}
+	api := handlers.NewAPI(s, logger)
+	
+	r := mux.NewRouter()
+	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
+	r.HandleFunc("/tasks", api.ListTasks).Methods("GET")
+
+	// Create tasks with different combinations
+	tasks := []string{
+		`{"title":"Filter Task 1","status":"pending","priority":"high","due_date":"2026-12-31"}`,
+		`{"title":"Filter Task 2","status":"pending","priority":"low","due_date":"2026-12-31"}`,
+		`{"title":"Filter Task 3","status":"pending","priority":"high"}`,
+		`{"title":"Filter Task 4","status":"pending"}`,
+	}
+
+	for _, taskJSON := range tasks {
+		req := httptest.NewRequest("POST", "/tasks", bytes.NewBufferString(taskJSON))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusCreated {
+			t.Fatalf("failed to create task: %d", w.Code)
+		}
+	}
+
+	// Filter by due_date
+	req := httptest.NewRequest("GET", "/tasks?due_date=2026-12-31", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	var filtered []models.Task
+	json.NewDecoder(w.Body).Decode(&filtered)
+	if len(filtered) != 2 {
+		t.Errorf("expected 2 tasks with due_date, got %d", len(filtered))
+	}
+
+	// Filter by null due_date
+	req = httptest.NewRequest("GET", "/tasks?due_date=null", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	json.NewDecoder(w.Body).Decode(&filtered)
+	if len(filtered) != 2 {
+		t.Errorf("expected 2 tasks without due_date, got %d", len(filtered))
+	}
+
+	// Filter by priority and due_date
+	req = httptest.NewRequest("GET", "/tasks?priority=high&due_date=2026-12-31", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	json.NewDecoder(w.Body).Decode(&filtered)
+	if len(filtered) != 1 {
+		t.Errorf("expected 1 task with high priority and due_date, got %d", len(filtered))
+	}
+	if len(filtered) > 0 && filtered[0].Title != "Filter Task 1" {
+		t.Errorf("expected 'Filter Task 1', got '%s'", filtered[0].Title)
 	}
 }

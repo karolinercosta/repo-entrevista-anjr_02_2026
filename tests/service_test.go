@@ -182,10 +182,11 @@ func TestFieldValidators(t *testing.T) {
 		}
 	})
 
-	t.Run("validate date field - future date", func(t *testing.T) {
+	t.Run("validate date field - future date string", func(t *testing.T) {
 		patch := map[string]interface{}{}
-		tomorrow := time.Now().UTC().AddDate(0, 0, 1)
-		err := models.ValidateDueDateField(tomorrow, patch, "due_date")
+		tomorrowTime := time.Now().UTC().AddDate(0, 0, 1)
+		tomorrowStr := tomorrowTime.Format("2006-01-02")
+		err := models.ValidateDueDateField(tomorrowStr, patch, "due_date")
 		if err != nil {
 			t.Errorf("expected no error for future date, got %v", err)
 		}
@@ -193,10 +194,29 @@ func TestFieldValidators(t *testing.T) {
 
 	t.Run("validate date field - past date fails", func(t *testing.T) {
 		patch := map[string]interface{}{}
-		yesterday := time.Now().UTC().AddDate(0, 0, -1)
-		err := models.ValidateDueDateField(yesterday, patch, "due_date")
+		yesterdayTime := time.Now().UTC().AddDate(0, 0, -1)
+		yesterdayStr := yesterdayTime.Format("2006-01-02")
+		err := models.ValidateDueDateField(yesterdayStr, patch, "due_date")
 		if err == nil {
 			t.Error("expected error for past date")
+		}
+	})
+
+	t.Run("validate date field - Date type", func(t *testing.T) {
+		patch := map[string]interface{}{}
+		tomorrowTime := time.Now().UTC().AddDate(0, 0, 1)
+		tomorrow := models.NewDate(tomorrowTime.Year(), tomorrowTime.Month(), tomorrowTime.Day())
+		err := models.ValidateDueDateField(tomorrow, patch, "due_date")
+		if err != nil {
+			t.Errorf("expected no error for future Date, got %v", err)
+		}
+	})
+
+	t.Run("validate date field - invalid format", func(t *testing.T) {
+		patch := map[string]interface{}{}
+		err := models.ValidateDueDateField("invalid-date", patch, "due_date")
+		if err == nil {
+			t.Error("expected error for invalid date format")
 		}
 	})
 }
