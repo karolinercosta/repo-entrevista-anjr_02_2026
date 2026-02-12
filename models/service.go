@@ -65,10 +65,10 @@ func NewTaskService(logger Logger) *TaskService {
 type BusinessRule func(task Task, patch map[string]interface{}) error
 
 var updateBusinessRules = []BusinessRule{
-	preventCompletedTaskEdits,
+	PreventCompletedTaskEdits,
 }
 
-func preventCompletedTaskEdits(task Task, patch map[string]interface{}) error {
+func PreventCompletedTaskEdits(task Task, patch map[string]interface{}) error {
 	if IsCompletedTask(task.Status) {
 		return NewBusinessRuleError("completed tasks cannot be edited")
 	}
@@ -103,14 +103,14 @@ type FieldValidator func(value interface{}, patch map[string]interface{}, fieldN
 
 // Field validators for each updatable field
 var fieldValidators = map[string]FieldValidator{
-	"status":      validateStatusField,
-	"priority":    validatePriorityField,
-	"due_date":    validateDueDateField,
-	"title":       validateStringField,
-	"description": validateStringField,
+	"status":      ValidateStatusField,
+	"priority":    ValidatePriorityField,
+	"due_date":    ValidateDueDateField,
+	"title":       ValidateStringField,
+	"description": ValidateStringField,
 }
 
-func validateStatusField(value interface{}, patch map[string]interface{}, fieldName string) error {
+func ValidateStatusField(value interface{}, patch map[string]interface{}, fieldName string) error {
 	s, ok := value.(string)
 	if !ok || !IsValidStatus(s) {
 		return NewValidationError("invalid status, allowed: pending, in_progress, completed, cancelled")
@@ -119,7 +119,7 @@ func validateStatusField(value interface{}, patch map[string]interface{}, fieldN
 	return nil
 }
 
-func validatePriorityField(value interface{}, patch map[string]interface{}, fieldName string) error {
+func ValidatePriorityField(value interface{}, patch map[string]interface{}, fieldName string) error {
 	s, ok := value.(string)
 	if !ok || !IsValidPriority(s) {
 		return NewValidationError("invalid priority, allowed: low, medium, high")
@@ -128,7 +128,7 @@ func validatePriorityField(value interface{}, patch map[string]interface{}, fiel
 	return nil
 }
 
-func validateDueDateField(value interface{}, patch map[string]interface{}, fieldName string) error {
+func ValidateDueDateField(value interface{}, patch map[string]interface{}, fieldName string) error {
 	switch vv := value.(type) {
 	case string:
 		parsed, err := ParseDate(vv)
@@ -150,7 +150,7 @@ func validateDueDateField(value interface{}, patch map[string]interface{}, field
 	return nil
 }
 
-func validateStringField(value interface{}, patch map[string]interface{}, fieldName string) error {
+func ValidateStringField(value interface{}, patch map[string]interface{}, fieldName string) error {
 	if _, ok := value.(string); !ok {
 		return NewValidationError(fieldName + " must be a string")
 	}
