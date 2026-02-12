@@ -71,6 +71,7 @@ func (a *API) ListTasks(w http.ResponseWriter, r *http.Request) {
 	tasks := a.store.List()
 	status := r.URL.Query().Get("status")
 	priority := r.URL.Query().Get("priority")
+	due_date := r.URL.Query().Get("due_date")
 
 	filtered := make([]models.Task, 0)
 	for _, task := range tasks {
@@ -78,8 +79,23 @@ func (a *API) ListTasks(w http.ResponseWriter, r *http.Request) {
 		if status != "" && task.Status != status {
 			continue
 		}
-		if priority != "" && task.Priority != priority {
-			continue
+		if priority != "" {
+			if priority == "null" {
+				if task.Priority != "" {
+					continue
+				}
+			} else if task.Priority != priority {
+				continue
+			}
+		}
+		if due_date != "" {
+			if due_date == "null" {
+				if task.DueDate != nil {
+					continue
+				}
+			} else if task.DueDate == nil || task.DueDate.String() != due_date {
+				continue
+			}
 		}
 
 		filtered = append(filtered, task)
