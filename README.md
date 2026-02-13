@@ -76,10 +76,11 @@ Os testes cobrem validações, regras de negócio, integrações básicas e a ca
 **Regras de Negócio (principais)**
 
 - Não é permitido editar uma tarefa cujo `status` seja `completed`. Tentativas de atualização devem retornar `409 Conflict`.
-- Campos obrigatórios: `title` (não-vazio).
-- Valores válidos para `status`: `pending`, `in_progress`, `completed`.
-- `priority` deve ser um inteiro entre `1` e `5` (inclusivo).
-- `due_date` (quando fornecida) deve ser uma data futura.
+- Campos obrigatórios: `title` (não-vazio, entre 3 e 100 caracteres) e `status`.
+- Valores válidos para `status`: `pending`, `in_progress`, `completed`, `cancelled`.
+- Valores válidos para `priority`: `low`, `medium`, `high` (opcional).
+- `due_date` (quando fornecida) deve ser uma data no formato `YYYY-MM-DD` e representar uma data presente ou futura.
+- O campo `due_date` é sempre retornado nas respostas (como string no formato `YYYY-MM-DD` ou `null`).
 
 Essas regras são aplicadas na camada de serviço (`models/service.go`) e podem ser configuradas/estendidas.
 
@@ -93,13 +94,26 @@ A validação é centralizada usando um conjunto de validadores por campo (Strat
 
 **Endpoints principais**
 
-- `GET /tasks` - lista todas as tarefas
+- `GET /tasks` - lista todas as tarefas (suporta filtros via query params: `status`, `priority`, `due_date`)
+  - Exemplos: `/tasks?status=pending`, `/tasks?priority=high`, `/tasks?due_date=2026-12-31`
+  - Filtragem por valores nulos: `/tasks?priority=null`, `/tasks?due_date=null`
 - `GET /tasks/{id}` - obtém tarefa por ID
 - `POST /tasks` - cria nova tarefa
 - `PUT /tasks/{id}` - atualiza tarefa existente (patch semântica suportada)
 - `DELETE /tasks/{id}` - remove tarefa
 
 Formatos e exemplos de payloads podem ser encontrados em `swagger.json`.
+
+**Exemplo de criação de tarefa com due_date:**
+```json
+{
+  "title": "Review code",
+  "description": "Code review PR #123",
+  "status": "pending",
+  "priority": "high",
+  "due_date": "2026-12-31"
+}
+```
 
 ---
 
