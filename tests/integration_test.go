@@ -144,7 +144,7 @@ func TestIntegrationTaskWithDueDate(t *testing.T) {
 	s := store.New()
 	logger := &models.NoOpLogger{}
 	api := handlers.NewAPI(s, logger)
-	
+
 	r := mux.NewRouter()
 	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
 	r.HandleFunc("/tasks/{id}", api.GetTask).Methods("GET")
@@ -212,7 +212,7 @@ func TestIntegrationFilterByDueDateAndPriority(t *testing.T) {
 	s := store.New()
 	logger := &models.NoOpLogger{}
 	api := handlers.NewAPI(s, logger)
-	
+
 	r := mux.NewRouter()
 	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
 	r.HandleFunc("/tasks", api.ListTasks).Methods("GET")
@@ -240,10 +240,13 @@ func TestIntegrationFilterByDueDateAndPriority(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var filtered []models.Task
-	json.NewDecoder(w.Body).Decode(&filtered)
-	if len(filtered) != 2 {
-		t.Errorf("expected 2 tasks with due_date, got %d", len(filtered))
+	var response models.TaskListResponse
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 2 {
+		t.Errorf("expected 2 tasks with due_date, got %d", len(response.Tasks))
+	}
+	if response.TotalItems != 2 {
+		t.Errorf("expected total_items=2, got %d", response.TotalItems)
 	}
 
 	// Filter by null due_date
@@ -251,9 +254,9 @@ func TestIntegrationFilterByDueDateAndPriority(t *testing.T) {
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	json.NewDecoder(w.Body).Decode(&filtered)
-	if len(filtered) != 2 {
-		t.Errorf("expected 2 tasks without due_date, got %d", len(filtered))
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 2 {
+		t.Errorf("expected 2 tasks without due_date, got %d", len(response.Tasks))
 	}
 
 	// Filter by priority and due_date
@@ -261,11 +264,14 @@ func TestIntegrationFilterByDueDateAndPriority(t *testing.T) {
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	json.NewDecoder(w.Body).Decode(&filtered)
-	if len(filtered) != 1 {
-		t.Errorf("expected 1 task with high priority and due_date, got %d", len(filtered))
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 1 {
+		t.Errorf("expected 1 task with high priority and due_date, got %d", len(response.Tasks))
 	}
-	if len(filtered) > 0 && filtered[0].Title != "Filter Task 1" {
-		t.Errorf("expected 'Filter Task 1', got '%s'", filtered[0].Title)
+	if len(response.Tasks) > 0 && response.Tasks[0].Title != "Filter Task 1" {
+		t.Errorf("expected 'Filter Task 1', got '%s'", response.Tasks[0].Title)
+	}
+	if response.TotalItems != 1 {
+		t.Errorf("expected total_items=1, got %d", response.TotalItems)
 	}
 }

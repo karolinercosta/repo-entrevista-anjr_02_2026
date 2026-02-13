@@ -133,13 +133,16 @@ func TestListTasksFilterByDueDate(t *testing.T) {
 	w = httptest.NewRecorder()
 	h.ListTasks(w, r)
 
-	var tasks []models.Task
-	json.NewDecoder(w.Body).Decode(&tasks)
-	if len(tasks) != 1 {
-		t.Errorf("expected 1 task, got %d", len(tasks))
+	var response models.TaskListResponse
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 1 {
+		t.Errorf("expected 1 task, got %d", len(response.Tasks))
 	}
-	if tasks[0].Title != "Task 1" {
-		t.Errorf("expected 'Task 1', got '%s'", tasks[0].Title)
+	if response.Tasks[0].Title != "Task 1" {
+		t.Errorf("expected 'Task 1', got '%s'", response.Tasks[0].Title)
+	}
+	if response.TotalItems != 1 {
+		t.Errorf("expected total_items=1, got %d", response.TotalItems)
 	}
 }
 
@@ -167,13 +170,16 @@ func TestListTasksFilterByNullDueDate(t *testing.T) {
 	w = httptest.NewRecorder()
 	h.ListTasks(w, r)
 
-	var tasks []models.Task
-	json.NewDecoder(w.Body).Decode(&tasks)
-	if len(tasks) != 1 {
-		t.Errorf("expected 1 task, got %d", len(tasks))
+	var response models.TaskListResponse
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 1 {
+		t.Errorf("expected 1 task, got %d", len(response.Tasks))
 	}
-	if tasks[0].Title != "Task 2" {
-		t.Errorf("expected 'Task 2', got '%s'", tasks[0].Title)
+	if response.Tasks[0].Title != "Task 2" {
+		t.Errorf("expected 'Task 2', got '%s'", response.Tasks[0].Title)
+	}
+	if response.TotalItems != 1 {
+		t.Errorf("expected total_items=1, got %d", response.TotalItems)
 	}
 }
 
@@ -201,12 +207,15 @@ func TestListTasksFilterByNullPriority(t *testing.T) {
 	w = httptest.NewRecorder()
 	h.ListTasks(w, r)
 
-	var tasks []models.Task
-	json.NewDecoder(w.Body).Decode(&tasks)
-	if len(tasks) != 1 {
-		t.Errorf("expected 1 task, got %d", len(tasks))
+	var response models.TaskListResponse
+	json.NewDecoder(w.Body).Decode(&response)
+	if len(response.Tasks) != 1 {
+		t.Errorf("expected 1 task, got %d", len(response.Tasks))
 	}
-	if tasks[0].Title != "Task 2" {
-		t.Errorf("expected 'Task 2', got '%s'", tasks[0].Title)
+	if response.Tasks[0].Title != "Task 2" {
+		t.Errorf("expected 'Task 2', got '%s'", response.Tasks[0].Title)
+	}
+	if response.TotalItems != 1 {
+		t.Errorf("expected total_items=1, got %d", response.TotalItems)
 	}
 }

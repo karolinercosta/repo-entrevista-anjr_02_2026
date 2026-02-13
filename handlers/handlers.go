@@ -101,8 +101,13 @@ func (a *API) ListTasks(w http.ResponseWriter, r *http.Request) {
 		filtered = append(filtered, task)
 	}
 
+	response := models.TaskListResponse{
+		Tasks:      filtered,
+		TotalItems: len(filtered),
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(filtered)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (a *API) GetTask(w http.ResponseWriter, r *http.Request) {

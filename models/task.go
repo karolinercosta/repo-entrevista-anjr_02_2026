@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Task struct {
 	ID          string     `json:"id" bson:"id,omitempty"`
@@ -11,4 +13,9 @@ type Task struct {
 	DueDate     *Date      `json:"due_date" bson:"due_date,omitempty"`
 	CreatedAt   time.Time  `json:"created_at" bson:"created_at"`
 	UpdatedAt   *time.Time `json:"updated_at" bson:"updated_at,omitempty"`
+}
+
+type TaskListResponse struct {
+	Tasks      []Task `json:"tasks"`
+	TotalItems int    `json:"total_items"`
 }
