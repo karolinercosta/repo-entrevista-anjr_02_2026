@@ -121,6 +121,55 @@ Formatos e exemplos de payloads podem ser encontrados em `swagger.json`.
 
 O projeto usa uma interface de `Logger` injetável para seguir o princípio de Inversão de Dependência (DIP). Isso facilita substituir o logger por um `NoOpLogger` durante os testes para manter a saída limpa.
 
+**Sistema de Logging Descentralizado:**
+
+O projeto implementa interceptadores (padrão Decorator) que logam automaticamente todas as operações, facilitando observabilidade:
+
+1. **LoggingStore** ([store/logging.go](store/logging.go)): Intercepta todas as operações de banco de dados
+   - Loga criação, leitura, atualização e exclusão de tarefas
+   - Registra duração de cada operação
+   - Funciona com qualquer implementação de Store (MongoDB ou in-memory)
+
+2. **LoggingMiddleware** ([handlers/middleware.go](handlers/middleware.go)): Intercepta todas as requisições HTTP
+   - Loga método, URI, status code, duração e tamanho da resposta
+   - Aplicado globalmente via `r.Use(middleware)`
+
+**Logs Coloridos com Códigos ANSI:**
+
+Os logs utilizam cores ANSI para facilitar visualização e debug:
+
+- **Níveis de Log:**
+  - `[INFO]` - Ciano (operações normais)
+  - `[WARN]` - Amarelo (avisos e erros 4xx)
+  - `[ERROR]` - Vermelho (erros 5xx e falhas críticas)
+  - `[FATAL]` - Vermelho + Negrito (erros fatais)
+
+- **Métodos HTTP:**
+  - `GET` - Azul
+  - `POST` - Verde
+  - `PUT` - Amarelo
+  - `DELETE` - Vermelho
+
+- **Status Codes:**
+  - 2xx - Verde (sucesso)
+  - 3xx - Ciano (redirecionamento)
+  - 4xx - Amarelo (erro do cliente)
+  - 5xx - Vermelho + Negrito (erro do servidor)
+
+**Exemplo de logs coloridos no Docker:**
+```
+[INFO] successfully connected to MongoDB: mongodb://mongo:27017
+[INFO] [HTTP] POST /tasks - Started
+[INFO] [STORE] Creating task: title=Review code, status=pending
+[INFO] [STORE] Created task: id=507f1f77bcf86cd799439011, duration=2.5ms
+[INFO] [HTTP] POST /tasks - Completed 201 in 3.1ms (156 bytes)
+```
+
+Para visualizar os logs em tempo real:
+```bash
+docker compose logs -f api
+```
+
 Erros são retornados de forma estruturada pela API (JSON) com códigos HTTP apropriados.
 
 ---
