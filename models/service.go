@@ -17,23 +17,36 @@ type Logger interface {
 	Fatal(msg string, args ...interface{})
 }
 
-// DefaultLogger implements Logger using standard log package
+// Cores ANSI para logs coloridos
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorPurple = "\033[35m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+	ColorBold   = "\033[1m"
+)
+
+// DefaultLogger implements Logger using standard log package with colors
 type DefaultLogger struct{}
 
 func (l *DefaultLogger) Info(msg string, args ...interface{}) {
-	log.Printf("[INFO] "+msg, args...)
+	log.Printf(ColorCyan+"[INFO]"+ColorReset+" "+msg, args...)
 }
 
 func (l *DefaultLogger) Warn(msg string, args ...interface{}) {
-	log.Printf("[WARN] "+msg, args...)
+	log.Printf(ColorYellow+"[WARN]"+ColorReset+" "+msg, args...)
 }
 
 func (l *DefaultLogger) Error(msg string, args ...interface{}) {
-	log.Printf("[ERROR] "+msg, args...)
+	log.Printf(ColorRed+"[ERROR]"+ColorReset+" "+msg, args...)
 }
 
 func (l *DefaultLogger) Fatal(msg string, args ...interface{}) {
-	log.Fatalf("[FATAL] "+msg, args...)
+	log.Fatalf(ColorRed+ColorBold+"[FATAL]"+ColorReset+" "+msg, args...)
 }
 
 // NewDefaultLogger creates a logger using standard log package

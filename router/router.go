@@ -49,8 +49,19 @@ func NewWithLogger(logger models.Logger) *mux.Router {
 		logger.Info("successfully connected to MongoDB: %s", mongoURI)
 	}
 
+	// Encapsula o store com logging para interceptar todas as operações
+	s = store.NewLoggingStore(s, logger)
+
 	api := handlers.NewAPI(s, logger)
+
+	// Cria o middleware de logging HTTP
+	loggingMiddleware := handlers.NewLoggingMiddleware(logger)
+
 	r := mux.NewRouter()
+
+	// Aplica o middleware globalmente para interceptar todas as requisições
+	r.Use(loggingMiddleware.Middleware)
+
 	r.HandleFunc("/tasks", api.CreateTask).Methods("POST")
 	r.HandleFunc("/tasks", api.ListTasks).Methods("GET")
 	r.HandleFunc("/tasks/{id}", api.GetTask).Methods("GET")
